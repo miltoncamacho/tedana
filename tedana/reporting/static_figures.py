@@ -940,6 +940,26 @@ def plot_heatmap(
     corr = corr_df.T.corr().values
     pdist_uncondensed = 1.0 - corr
     pdist_condensed = np.concatenate([row[i + 1 :] for i, row in enumerate(pdist_uncondensed)])
+    if not np.all(np.isfinite(pdist_condensed)):
+        tol = 1e-12
+        zerovar_regressors = []
+        for name in external_regressors.index:
+            series = external_regressors.loc[name].to_numpy(dtype=float)
+            if np.nan_to_num(np.std(series)) < tol:
+                zerovar_regressors.append(name)
+        zerovar_components = []
+        for name in mixing.index:
+            series = mixing.loc[name].to_numpy(dtype=float)
+            if np.nan_to_num(np.std(series)) < tol:
+                zerovar_components.append(name)
+        RepLGR.warning(
+            "Skipping heatmap plot for %s because non-finite values were detected in the correlation matrix. "
+            "Regressors with zero variance: %s; components with zero variance: %s.",
+            out_file,
+            zerovar_regressors or "none",
+            zerovar_components or "none",
+        )
+        return
     linkage = spc.linkage(pdist_condensed, method="complete")
     cluster_assignments = spc.fcluster(linkage, 0.5 * pdist_condensed.max(), "distance")
     idx = np.argsort(cluster_assignments)
