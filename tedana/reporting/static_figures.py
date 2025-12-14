@@ -953,13 +953,14 @@ def plot_heatmap(
             if np.nan_to_num(np.std(series)) < tol:
                 zerovar_components.append(name)
         RepLGR.warning(
-            "Skipping heatmap plot for %s because non-finite values were detected in the correlation matrix. "
+            "Non-finite correlation distances detected while generating %s; "
+            "replacing NaN/Inf with zeros for plotting. "
             "Regressors with zero variance: %s; components with zero variance: %s.",
             out_file,
             zerovar_regressors or "none",
             zerovar_components or "none",
         )
-        return
+        pdist_condensed = np.nan_to_num(pdist_condensed, nan=0.0, posinf=0.0, neginf=0.0)
     linkage = spc.linkage(pdist_condensed, method="complete")
     cluster_assignments = spc.fcluster(linkage, 0.5 * pdist_condensed.max(), "distance")
     idx = np.argsort(cluster_assignments)
